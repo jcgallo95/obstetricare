@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0F6E56">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ObstetriCare">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<title>ObstetriCare</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+:root {
+  --teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-400:#1D9E75;--teal-600:#0F6E56;--teal-800:#085041;--teal-900:#04342C;
+  --red-50:#FCEBEB;--red-200:#F09595;--red-400:#E24B4A;--red-600:#A32D2D;--red-800:#791F1F;
+  --amber-50:#FAEEDA;--amber-200:#EF9F27;--amber-400:#BA7517;--amber-800:#633806;
+  --blue-50:#E6F1FB;--blue-100:#B5D4F4;--blue-400:#378ADD;--blue-600:#185FA5;--blue-800:#0C447C;
+  --green-50:#EAF3DE;--green-400:#639922;--green-600:#3B6D11;
+  --purple-50:#EEEDFE;--purple-400:#7F77DD;--purple-600:#534AB7;
+  --gray-50:#F1EFE8;--gray-100:#D3D1C7;--gray-200:#B4B2A9;--gray-400:#888780;--gray-600:#5F5E5A;--gray-800:#444441;
+}
+html,body { height:100%; overflow:hidden; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f0f4f8; display:flex; justify-content:center; }
+.app { width:100%; max-width:420px; height:100vh; background:white; position:relative; overflow:hidden; }
+
+/* ── SPLASH ── */
+#splash { position:absolute; inset:0; background:var(--teal-600); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; transition:opacity .5s; }
+#splash.hide { opacity:0; pointer-events:none; }
+.splash-logo { width:80px; height:80px; background:rgba(255,255,255,.15); border-radius:22px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
+.splash-logo i { font-size:42px; color:white; }
+.splash-title { font-size:26px; font-weight:700; color:white; margin-bottom:6px; }
+.splash-sub { font-size:14px; color:rgba(255,255,255,.75); }
+.splash-spin { margin-top:40px; width:32px; height:32px; border:3px solid rgba(255,255,255,.25); border-top-color:white; border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── SCREEN SYSTEM ── */
+/* Cada "página" es position:absolute inset:0, invisible por defecto */
+.page { position:absolute; inset:0; background:white; display:flex; flex-direction:column; overflow:hidden; opacity:0; pointer-events:none; transition:opacity .2s; z-index:1; }
+.page.active { opacity:1; pointer-events:all; z-index:2; }
+.page-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+
+/* ── SHARED UI ── */
+input[type=text],input[type=email],input[type=password],input[type=number],select,textarea {
+  width:100%; padding:13px 14px; border:1.5px solid var(--gray-100); border-radius:11px;
+  font-size:15px; color:#1a1a1a; background:white; outline:none; font-family:inherit; -webkit-appearance:none;
+}
+input:focus,select:focus,textarea:focus { border-color:var(--teal-400); }
+select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
+.field { margin-bottom:16px; }
+.field label { font-size:13px; font-weight:500; color:var(--gray-800); display:block; margin-bottom:6px; }
+.field .hint { font-size:12px; color:var(--gray-400); margin-top:4px; }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.btn { width:100%; padding:14px; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; color:white; transition:all .15s; }
+.btn:active { transform:scale(.98); }
+.btn:disabled { background:var(--gray-200)!important; color:var(--gray-400); cursor:default; transform:none; }
+.btn-teal { background:var(--teal-600); }
+.btn-blue { background:var(--blue-600); }
+.btn-red { background:var(--red-600); }
+.btn-purple { background:var(--purple-600); }
+.btn-ghost { background:white; color:var(--gray-600); border:1.5px solid var(--gray-100); }
+.topbar { padding:14px 18px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.back-btn { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; background:rgba(255,255,255,.15); flex-shrink:0; }
+.back-btn i { font-size:18px; color:white; }
+.topbar-title { font-size:16px; font-weight:600; color:white; }
+.topbar-sub { font-size:11px; color:rgba(255,255,255,.75); margin-top:1px; }
+.bottom-bar { padding:14px 16px; background:white; border-top:1px solid var(--gray-50); flex-shrink:0; }
+.section-card { background:white; border:1.5px solid var(--gray-100); border-radius:13px; margin-bottom:12px; overflow:hidden; }
+.sc-hdr { padding:11px 14px; border-bottom:1px solid var(--gray-50); display:flex; align-items:center; gap:8px; background:var(--gray-50); }
+.sc-hdr i { font-size:16px; color:var(--gray-600); }
+.sc-hdr span { font-size:12px; font-weight:600; color:var(--gray-800); text-transform:uppercase; letter-spacing:.4px; }
+.sc-body { padding:12px 14px; }
+.dr { display:flex; justify-content:space-between; align-items:flex-start; padding:6px 0; border-bottom:1px solid var(--gray-50); }
+.dr:last-child { border-bottom:none; }
+.dk { font-size:13px; color:var(--gray-600); }
+.dv { font-size:13px; color:#1a1a1a; font-weight:500; text-align:right; max-width:200px; }
+.dv.danger { color:var(--red-600); }
+.dv.warn { color:var(--amber-400); }
+.chip-opt { border:1.5px solid var(--gray-100); border-radius:12px; padding:13px 16px; cursor:pointer; display:flex; align-items:center; gap:12px; background:white; margin-bottom:10px; transition:all .15s; }
+.chip-opt.sel { border-color:var(--teal-400); background:var(--teal-50); }
+.chip-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.chip-icon i { font-size:20px; }
+.chip-name { font-size:15px; font-weight:500; color:#1a1a1a; }
+.chip-desc { font-size:12px; color:var(--gray-600); margin-top:2px; }
+.chip-chk { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--gray-200); flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-left:auto; }
+.chip-opt.sel .chip-chk { background:var(--teal-400); border-color:var(--teal-400); }
+.chip-opt.sel .chip-chk i { color:white; font-size:13px; }
+.tog-row { display:flex; gap:8px; }
+.tog-btn { flex:1; padding:11px; border:1.5px solid var(--gray-100); border-radius:8px; background:white; font-size:14px; cursor:pointer; color:#1a1a1a; text-align:center; }
+.tog-btn.sel { background:var(--teal-50); border-color:var(--teal-400); color:var(--teal-800); font-weight:500; }
+.mc-opt { border:1.5px solid var(--gray-100); border-radius:10px; padding:12px 14px; cursor:pointer; display:flex; align-items:center; gap:10px; background:white; margin-bottom:8px; }
+.mc-opt.sel { border-color:var(--teal-400); background:var(--teal-50); }
+.mc-box { width:20px; height:20px; border-radius:5px; border:1.5px solid var(--gray-200); flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.mc-opt.sel .mc-box { background:var(--teal-400); border-color:var(--teal-400); }
+.mc-opt.sel .mc-box i { color:white; font-size:12px; }
+.atag { padding:8px 12px; border:1.5px solid var(--gray-100); border-radius:8px; font-size:13px; cursor:pointer; background:white; color:#1a1a1a; }
+.atag.sel { background:var(--teal-50); border-color:var(--teal-400); color:var(--teal-800); font-weight:500; }
+.atag.danger-tag.sel { background:var(--red-50); border-color:var(--red-400); color:var(--red-800); }
+.flag-box { background:var(--red-50); border-radius:9px; padding:12px 14px; margin-bottom:12px; }
+.flag-box-title { font-size:12px; font-weight:700; color:var(--red-800); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.flag-item { font-size:13px; color:var(--red-800); padding:3px 0; display:flex; gap:6px; }
+.flag-item::before { content:"•"; font-weight:700; }
+.red-alert { background:var(--red-50); border:1.5px solid var(--red-200); border-radius:10px; padding:12px 14px; display:flex; gap:10px; margin-top:12px; }
+.red-alert i { color:var(--red-600); font-size:18px; flex-shrink:0; margin-top:1px; }
+.red-alert-text { font-size:13px; color:var(--red-800); line-height:1.4; }
+.red-alert-text strong { font-weight:600; display:block; margin-bottom:2px; }
+.progress-wrap { padding:10px 20px 14px; }
+.prog-label { font-size:11px; color:rgba(255,255,255,.8); margin-bottom:5px; }
+.prog-track { height:4px; background:rgba(255,255,255,.25); border-radius:2px; overflow:hidden; }
+.prog-fill { height:100%; background:white; border-radius:2px; transition:width .4s; }
+.sent-wrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 24px; text-align:center; }
+.sent-icon { width:76px; height:76px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:18px; }
+.sent-icon i { font-size:36px; }
+.sent-card { background:white; border:1.5px solid var(--gray-100); border-radius:13px; padding:16px; margin:20px 0; width:100%; text-align:left; }
+.sc-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--gray-50); font-size:13px; }
+.sc-row:last-child { border-bottom:none; }
+.sc-k { color:var(--gray-600); }
+.sc-v { font-weight:500; color:#1a1a1a; }
+.chk-step { padding:12px 14px; border-bottom:1px solid var(--gray-50); display:flex; align-items:center; gap:12px; cursor:pointer; }
+.chk-step:last-child { border-bottom:none; }
+.chk-circle { width:24px; height:24px; border-radius:50%; border:2px solid var(--gray-200); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
+.chk-circle.done { background:var(--teal-400); border-color:var(--teal-400); }
+.chk-circle.done i { color:white; font-size:13px; }
+.chk-text { font-size:14px; color:#1a1a1a; }
+.chk-text.done-text { color:var(--gray-400); text-decoration:line-through; }
+.dec-opt { border:2px solid var(--gray-100); border-radius:12px; padding:14px 16px; cursor:pointer; display:flex; align-items:center; gap:14px; background:white; margin-bottom:10px; transition:all .15s; }
+.dec-opt.sel-ok { border-color:var(--green-400); background:var(--green-50); }
+.dec-opt.sel-consult { border-color:var(--amber-200); background:var(--amber-50); }
+.dec-opt.sel-amb { border-color:var(--red-400); background:var(--red-50); }
+.dec-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.dec-icon i { font-size:20px; }
+.dec-chk { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--gray-200); flex-shrink:0; margin-left:auto; display:flex; align-items:center; justify-content:center; }
+/* PLAN CARDS */
+.plan-card { border:2px solid var(--gray-100); border-radius:16px; padding:20px; margin-bottom:12px; cursor:pointer; transition:all .15s; }
+.plan-card.featured { border-color:var(--teal-400); background:var(--teal-50); }
+.plan-badge { display:inline-block; background:var(--teal-400); color:white; font-size:11px; font-weight:700; border-radius:20px; padding:3px 10px; margin-bottom:10px; }
+.plan-name { font-size:18px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+.plan-price { font-size:28px; font-weight:800; color:var(--teal-600); margin-bottom:12px; }
+.plan-price span { font-size:14px; font-weight:500; color:var(--gray-600); }
+.plan-features { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.plan-features li { font-size:13px; color:var(--gray-600); display:flex; align-items:center; gap:8px; }
+.plan-features li i { color:var(--teal-400); font-size:15px; flex-shrink:0; }
+/* ALERT CARDS */
+.alert-card { margin-bottom:10px; border-radius:14px; border:1.5px solid var(--gray-100); background:white; overflow:hidden; cursor:pointer; }
+.alert-card.urgente { border-color:var(--red-200); }
+.alert-card.dudoso { border-color:#EF9F27; }
+.alert-stripe { height:4px; }
+.stripe-u { background:var(--red-400); }
+.stripe-d { background:#EF9F27; }
+.alert-body { padding:14px; }
+/* LOADING */
+.loading-full { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center; }
+.spinner { width:46px; height:46px; border:3px solid var(--teal-100); border-top-color:var(--teal-400); border-radius:50%; animation:spin .8s linear infinite; margin-bottom:18px; }
+/* OFFLINE */
+.offline-bar { background:var(--amber-50); border-bottom:1px solid var(--amber-200); padding:8px 16px; display:none; align-items:center; gap:8px; font-size:12px; color:var(--amber-800); flex-shrink:0; }
+.offline-bar.show { display:flex; }
+/* TABS */
+.tab-bar { display:flex; border-top:1px solid rgba(255,255,255,.12); flex-shrink:0; }
+.tab-item { flex:1; padding:10px 4px 12px; text-align:center; cursor:pointer; border-bottom:2px solid transparent; }
+.tab-item i { font-size:20px; display:block; margin-bottom:3px; color:rgba(255,255,255,.5); }
+.tab-item span { font-size:10px; color:rgba(255,255,255,.5); }
+.tab-item.active i,.tab-item.active span { color:white; }
+.tab-item.active { border-bottom-color:white; }
+/* HIST */
+.hist-item { border:1.5px solid var(--gray-100); border-radius:12px; padding:14px; margin-bottom:10px; }
+.hist-top { display:flex; justify-content:space-between; margin-bottom:6px; }
+.hist-name { font-size:14px; font-weight:600; color:#1a1a1a; }
+.hist-date { font-size:11px; color:var(--gray-400); }
+.hist-dec { font-size:12px; font-weight:500; border-radius:6px; padding:3px 8px; display:inline-block; margin-bottom:4px; }
+.hist-sint { font-size:12px; color:var(--gray-600); }
+.dec-ok { background:var(--green-50); color:var(--green-600); }
+.dec-amb { background:var(--red-50); color:var(--red-600); }
+.dec-consult { background:var(--amber-50); color:var(--amber-800); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo"><i class="ti ti-heart-rate-monitor"></i></div>
+  <div class="splash-title">ObstetriCare</div>
+  <div class="splash-sub">Urgencias Obstétricas · Rosario</div>
+  <div class="splash-spin"></div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: INICIO PÚBLICO
+════════════════════════════════════════ -->
+<div id="pg-inicio" class="page active">
+  <div class="page-scroll">
+    <div style="background:var(--teal-600);padding:40px 24px 36px;text-align:center;">
+      <div style="width:72px;height:72px;background:rgba(255,255,255,.15);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class="ti ti-heart-rate-monitor" style="font-size:36px;color:white;"></i>
+      </div>
+      <div style="font-size:26px;font-weight:800;color:white;margin-bottom:8px;letter-spacing:-.5px;">ObstetriCare</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.78);line-height:1.6;max-width:270px;margin:0 auto;">Guardia obstétrica disponible las 24 hs desde tu celular</div>
+    </div>
+    <div style="padding:24px 20px;">
+      <div style="background:var(--red-50);border-radius:10px;padding:12px 14px;display:flex;gap:10px;margin-bottom:24px;">
+        <i class="ti ti-alert-circle" style="color:var(--red-600);font-size:18px;flex-shrink:0;margin-top:1px;"></i>
+        <p style="font-size:12px;color:var(--red-800);line-height:1.5;"><strong>Emergencia evidente:</strong> llamá al <strong>107</strong> directamente. Esta app no reemplaza a tu obstetra.</p>
+      </div>
+      <button class="btn btn-teal" style="margin-bottom:12px;" onclick="navTo('pg-login-paciente')">
+        <i class="ti ti-user-circle"></i> Ingresar como paciente
+      </button>
+      <button class="btn btn-ghost" onclick="navTo('pg-registro-paciente')">
+        <i class="ti ti-user-plus"></i> Crear cuenta nueva
+      </button>
+      <div style="text-align:center;margin-top:20px;">
+        <span style="font-size:12px;color:var(--gray-400);cursor:pointer;" onclick="navTo('pg-login-profesional')">
+          Acceso profesional / empresa
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: LOGIN PACIENTE
+════════════════════════════════════════ -->
+<div id="pg-login-paciente" class="page">
+  <div style="background:var(--teal-600);padding:14px 18px 20px;">
+    <div class="back-btn" onclick="navTo('pg-inicio')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:18px;font-weight:700;margin-top:8px;">Iniciá sesión</div>
+    <div style="color:rgba(255,255,255,.75);font-size:13px;margin-top:4px;">Acceso para pacientes</div>
+  </div>
+  <div class="page-scroll" style="padding:24px 20px;">
+    <div class="field"><label>Email</label><input type="email" id="lp-email" placeholder="tu@email.com"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="lp-pass" placeholder="••••••••"></div>
+    <div style="text-align:right;margin-bottom:20px;"><span style="font-size:13px;color:var(--teal-600);cursor:pointer;">¿Olvidaste tu contraseña?</span></div>
+    <button class="btn btn-teal" onclick="loginPaciente()"><i class="ti ti-login"></i> Ingresar</button>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--gray-600);">
+      ¿No tenés cuenta? <span style="color:var(--teal-600);font-weight:600;cursor:pointer;" onclick="navTo('pg-registro-paciente')">Registrate</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: REGISTRO PACIENTE
+════════════════════════════════════════ -->
+<div id="pg-registro-paciente" class="page">
+  <div style="background:var(--teal-600);padding:14px 18px 20px;">
+    <div class="back-btn" onclick="navTo('pg-inicio')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:18px;font-weight:700;margin-top:8px;">Crear cuenta</div>
+    <div style="color:rgba(255,255,255,.75);font-size:13px;margin-top:4px;">Paso 1 de 3 — Datos de acceso</div>
+  </div>
+  <div class="page-scroll" style="padding:24px 20px;">
+    <div class="row2">
+      <div class="field"><label>Nombre</label><input type="text" id="rp-nombre" placeholder="Nombre"></div>
+      <div class="field"><label>Apellido</label><input type="text" id="rp-apellido" placeholder="Apellido"></div>
+    </div>
+    <div class="field"><label>Email</label><input type="email" id="rp-email" placeholder="tu@email.com"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="rp-pass" placeholder="Mínimo 8 caracteres"><div class="hint">Mínimo 8 caracteres</div></div>
+    <div class="field"><label>Confirmar contraseña</label><input type="password" id="rp-pass2" placeholder="Repetí tu contraseña"></div>
+    <button class="btn btn-teal" onclick="navTo('pg-planes')"><i class="ti ti-arrow-right"></i> Continuar</button>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--gray-600);">
+      ¿Ya tenés cuenta? <span style="color:var(--teal-600);font-weight:600;cursor:pointer;" onclick="navTo('pg-login-paciente')">Iniciá sesión</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: PLANES Y MEMBRESÍA
+════════════════════════════════════════ -->
+<div id="pg-planes" class="page">
+  <div style="background:var(--teal-600);padding:14px 18px 20px;">
+    <div class="back-btn" onclick="navTo('pg-registro-paciente')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:18px;font-weight:700;margin-top:8px;">Elegí tu plan</div>
+    <div style="color:rgba(255,255,255,.75);font-size:13px;margin-top:4px;">Paso 2 de 3 — Membresía</div>
+  </div>
+  <div class="page-scroll" style="padding:20px;">
+    <div style="font-size:14px;color:var(--gray-600);margin-bottom:18px;line-height:1.5;">Elegí el plan que mejor se adapte a tu embarazo. Podés cancelar cuando quieras.</div>
+
+    <!-- PLAN BÁSICO -->
+    <div class="plan-card" id="plan-basico" onclick="selPlan('basico')">
+      <div class="plan-name">Plan Básico</div>
+      <div class="plan-price">$2.500 <span>/ mes</span></div>
+      <ul class="plan-features">
+        <li><i class="ti ti-check"></i> Triage de síntomas ilimitado</li>
+        <li><i class="ti ti-check"></i> Clasificación de urgencia</li>
+        <li><i class="ti ti-check"></i> Aviso a tu obstetra personal</li>
+        <li><i class="ti ti-x" style="color:var(--gray-300);"></i> <span style="color:var(--gray-400);">Teleconsulta con guardia</span></li>
+        <li><i class="ti ti-x" style="color:var(--gray-300);"></i> <span style="color:var(--gray-400);">Activación de ambulancia</span></li>
+      </ul>
+    </div>
+
+    <!-- PLAN COMPLETO -->
+    <div class="plan-card featured" id="plan-completo" onclick="selPlan('completo')">
+      <div class="plan-badge">⭐ Recomendado</div>
+      <div class="plan-name">Plan Completo</div>
+      <div class="plan-price">$4.900 <span>/ mes</span></div>
+      <ul class="plan-features">
+        <li><i class="ti ti-check"></i> Todo lo del plan básico</li>
+        <li><i class="ti ti-check"></i> Teleconsulta con obstetra de guardia</li>
+        <li><i class="ti ti-check"></i> Activación de ambulancia</li>
+        <li><i class="ti ti-check"></i> Historial completo de consultas</li>
+        <li><i class="ti ti-check"></i> Atención prioritaria</li>
+      </ul>
+    </div>
+
+    <div style="background:var(--blue-50);border-radius:10px;padding:12px 14px;display:flex;gap:10px;margin-bottom:16px;">
+      <i class="ti ti-shield-check" style="color:var(--blue-600);font-size:18px;flex-shrink:0;margin-top:1px;"></i>
+      <p style="font-size:12px;color:var(--blue-800);line-height:1.5;">Tu pago está protegido. Podés cancelar en cualquier momento desde la app sin costo adicional.</p>
+    </div>
+    <button class="btn btn-teal" id="btn-plan" onclick="navTo('pg-pago')"><i class="ti ti-arrow-right"></i> Continuar con Plan Completo</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: PAGO
+════════════════════════════════════════ -->
+<div id="pg-pago" class="page">
+  <div style="background:var(--teal-600);padding:14px 18px 20px;">
+    <div class="back-btn" onclick="navTo('pg-planes')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:18px;font-weight:700;margin-top:8px;">Datos de pago</div>
+    <div style="color:rgba(255,255,255,.75);font-size:13px;margin-top:4px;">Paso 3 de 3 — Membresía</div>
+  </div>
+  <div class="page-scroll" style="padding:20px;">
+    <div style="background:var(--teal-50);border:1px solid var(--teal-100);border-radius:12px;padding:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div><div style="font-size:13px;color:var(--teal-600);font-weight:600;">Plan seleccionado</div><div style="font-size:16px;font-weight:700;color:var(--teal-900);" id="resumen-plan">Plan Completo</div></div>
+      <div style="font-size:20px;font-weight:800;color:var(--teal-600);" id="resumen-precio">$4.900/mes</div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px;">Método de pago</div>
+    <div class="chip-opt sel" id="mp-opt" onclick="selPago('mp',this)">
+      <div class="chip-icon" style="background:#009ee3;"><i class="ti ti-brand-mastercard" style="color:white;"></i></div>
+      <div><div class="chip-name">MercadoPago</div><div class="chip-desc">Tarjeta, débito o saldo MP</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div class="chip-opt" id="trans-opt" onclick="selPago('trans',this)">
+      <div class="chip-icon" style="background:var(--blue-50);"><i class="ti ti-building-bank" style="color:var(--blue-600);"></i></div>
+      <div><div class="chip-name">Transferencia bancaria</div><div class="chip-desc">CBU / Alias</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div style="background:var(--gray-50);border-radius:10px;padding:12px 14px;margin-bottom:20px;">
+      <div style="font-size:12px;color:var(--gray-600);line-height:1.6;">
+        Al confirmar, aceptás los <span style="color:var(--teal-600);cursor:pointer;">Términos y Condiciones</span> y la <span style="color:var(--teal-600);cursor:pointer;">Política de Privacidad</span> de ObstetriCare. La membresía se renueva automáticamente cada mes.
+      </div>
+    </div>
+    <button class="btn btn-teal" onclick="confirmarPago()"><i class="ti ti-lock"></i> Confirmar y pagar</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: BIENVENIDA POST-PAGO
+════════════════════════════════════════ -->
+<div id="pg-bienvenida-pac" class="page">
+  <div class="sent-wrap">
+    <div class="sent-icon" style="background:var(--teal-50);"><i class="ti ti-circle-check" style="color:var(--teal-600);"></i></div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:8px;">¡Todo listo!</div>
+    <div style="font-size:14px;color:var(--gray-600);line-height:1.6;max-width:270px;">Tu cuenta está activa. Ya podés usar ObstetriCare las 24 hs.</div>
+    <div class="sent-card">
+      <div class="sc-row"><span class="sc-k">Plan</span><span class="sc-v" id="conf-plan">Plan Completo</span></div>
+      <div class="sc-row"><span class="sc-k">Próxima facturación</span><span class="sc-v">14 jul 2025</span></div>
+      <div class="sc-row"><span class="sc-k">Soporte</span><span class="sc-v">obstetricare@app.ar</span></div>
+    </div>
+    <button class="btn btn-teal" onclick="navTo('pg-pac-home')"><i class="ti ti-arrow-right"></i> Ir a la app</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: HOME PACIENTE
+════════════════════════════════════════ -->
+<div id="pg-pac-home" class="page" style="flex-direction:column;">
+  <div style="background:var(--teal-600);padding:14px 18px 18px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div>
+        <div style="color:white;font-size:17px;font-weight:700;">Hola, <span id="pac-nombre-home">María Laura</span> 👋</div>
+        <div style="color:rgba(255,255,255,.75);font-size:12px;margin-top:2px;">Plan Completo · activo</div>
+      </div>
+      <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="navTo('pg-pac-perfil')">
+        <i class="ti ti-user-circle" style="color:white;font-size:20px;"></i>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+      <i class="ti ti-pregnant" style="color:rgba(255,255,255,.8);font-size:24px;"></i>
+      <div>
+        <div style="color:white;font-size:14px;font-weight:600;" id="pac-eg-home">34 semanas · Embarazo único</div>
+        <div style="color:rgba(255,255,255,.65);font-size:12px;">Obstetra: Dra. Morales</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-scroll" style="padding:20px;">
+    <button class="btn btn-red" style="margin-bottom:14px;font-size:16px;padding:16px;" onclick="navTo('pg-pac-sintoma')">
+      <i class="ti ti-alert-triangle" style="font-size:20px;"></i> Tengo un síntoma de alarma
+    </button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div style="border:1.5px solid var(--gray-100);border-radius:13px;padding:14px;cursor:pointer;" onclick="navTo('pg-pac-historial')">
+        <i class="ti ti-clock-history" style="font-size:24px;color:var(--teal-400);display:block;margin-bottom:8px;"></i>
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a;">Historial</div>
+        <div style="font-size:12px;color:var(--gray-400);margin-top:2px;">3 consultas</div>
+      </div>
+      <div style="border:1.5px solid var(--gray-100);border-radius:13px;padding:14px;cursor:pointer;" onclick="navTo('pg-pac-perfil')">
+        <i class="ti ti-user-circle" style="font-size:24px;color:var(--blue-400);display:block;margin-bottom:8px;"></i>
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a;">Mi perfil</div>
+        <div style="font-size:12px;color:var(--gray-400);margin-top:2px;">Datos del embarazo</div>
+      </div>
+    </div>
+    <div style="font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:12px;">Última consulta</div>
+    <div style="border:1.5px solid var(--gray-100);border-radius:12px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a;">Movimientos fetales</div>
+        <div style="font-size:11px;color:var(--gray-400);">Ayer 22:10</div>
+      </div>
+      <span class="dec-ok hist-dec">Sin urgencia inmediata</span>
+      <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">Atendida por Dr/a. García</div>
+    </div>
+    <div style="margin-top:16px;background:var(--amber-50);border-radius:10px;padding:12px 14px;display:flex;gap:10px;">
+      <i class="ti ti-alert-circle" style="color:var(--amber-400);font-size:18px;flex-shrink:0;"></i>
+      <p style="font-size:12px;color:var(--amber-800);line-height:1.5;">Esta app no reemplaza tu control prenatal. Ante cualquier duda, consultá con tu obstetra.</p>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: TRIAGE — SELECCIÓN SÍNTOMA
+════════════════════════════════════════ -->
+<div id="pg-pac-sintoma" class="page" style="flex-direction:column;">
+  <div style="background:var(--teal-600);padding:14px 18px 18px;flex-shrink:0;">
+    <div class="back-btn" onclick="navTo('pg-pac-home')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:16px;font-weight:600;margin-top:8px;">¿Qué síntoma tenés?</div>
+  </div>
+  <div class="page-scroll" style="padding:20px;">
+    <div style="font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:6px;">Síntoma principal</div>
+    <div style="font-size:14px;color:var(--gray-600);margin-bottom:16px;">Seleccioná el que más te preocupa ahora.</div>
+    <div class="chip-opt" data-s="sangrado" onclick="selSint(this)">
+      <div class="chip-icon" style="background:var(--red-50);"><i class="ti ti-droplet" style="color:var(--red-600);"></i></div>
+      <div><div class="chip-name">Sangrado vaginal</div><div class="chip-desc">Pérdida de sangre por vagina</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div class="chip-opt" data-s="dolor" onclick="selSint(this)">
+      <div class="chip-icon" style="background:var(--amber-50);"><i class="ti ti-bolt" style="color:var(--amber-400);"></i></div>
+      <div><div class="chip-name">Dolor abdominal</div><div class="chip-desc">Dolor en panza o útero</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div class="chip-opt" data-s="movimientos" onclick="selSint(this)">
+      <div class="chip-icon" style="background:var(--blue-50);"><i class="ti ti-baby-carriage" style="color:var(--blue-600);"></i></div>
+      <div><div class="chip-name">Movimientos fetales</div><div class="chip-desc">Disminución o ausencia</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div class="chip-opt" data-s="neurologico" onclick="selSint(this)">
+      <div class="chip-icon" style="background:var(--purple-50);"><i class="ti ti-brain" style="color:var(--purple-400);"></i></div>
+      <div><div class="chip-name">Síntomas neurológicos</div><div class="chip-desc">Cefalea, visión borrosa, epigastralgia</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div class="chip-opt" data-s="liquido" onclick="selSint(this)">
+      <div class="chip-icon" style="background:var(--teal-50);"><i class="ti ti-droplets" style="color:var(--teal-600);"></i></div>
+      <div><div class="chip-name">Pérdida de líquido</div><div class="chip-desc">Líquido claro, continuo o en chorro</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div class="chip-opt" data-s="otro" onclick="selSint(this)">
+      <div class="chip-icon" style="background:var(--gray-50);"><i class="ti ti-dots-circle-horizontal" style="color:var(--gray-600);"></i></div>
+      <div><div class="chip-name">Otro síntoma</div><div class="chip-desc">Algo que te preocupa y no está listado</div></div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-teal" id="btn-sint-next" disabled onclick="navTo('pg-pac-eval')">
+      Continuar <i class="ti ti-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: TRIAGE — EVALUACIÓN
+════════════════════════════════════════ -->
+<div id="pg-pac-eval" class="page" style="flex-direction:column;">
+  <div style="background:var(--teal-600);padding:14px 18px 0;flex-shrink:0;">
+    <div class="back-btn" onclick="navTo('pg-pac-sintoma')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:16px;font-weight:600;margin-top:8px;" id="eval-titulo">Evaluación</div>
+    <div class="progress-wrap">
+      <div class="prog-label" id="prog-label">Paso 1 de 4</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:25%;"></div></div>
+    </div>
+  </div>
+  <div class="page-scroll" style="padding:20px;" id="eval-content"></div>
+  <div class="bottom-bar">
+    <button class="btn btn-teal" id="btn-eval-next" disabled onclick="nextEvalStep()">
+      Continuar <i class="ti ti-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: TRIAGE — ANALIZANDO
+════════════════════════════════════════ -->
+<div id="pg-pac-loading" class="page">
+  <div style="background:var(--teal-600);padding:14px 18px;"><div style="color:white;font-size:16px;font-weight:600;text-align:center;">Analizando tu consulta</div></div>
+  <div class="loading-full">
+    <div class="spinner"></div>
+    <div style="font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:8px;">Evaluando tu situación</div>
+    <div style="font-size:13px;color:var(--gray-600);">Cruzando síntomas con tu historial y semanas de gestación…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: RESULTADO TRIAGE
+════════════════════════════════════════ -->
+<div id="pg-pac-resultado" class="page" style="flex-direction:column;">
+  <div style="background:var(--teal-600);padding:14px 18px;flex-shrink:0;">
+    <div style="color:white;font-size:16px;font-weight:600;">Resultado de tu consulta</div>
+  </div>
+  <div class="page-scroll">
+    <div id="res-header"></div>
+    <div id="res-body" style="padding:0 16px;"></div>
+    <div style="height:20px;"></div>
+  </div>
+  <div class="bottom-bar" id="res-actions"></div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: HISTORIAL PACIENTE
+════════════════════════════════════════ -->
+<div id="pg-pac-historial" class="page" style="flex-direction:column;">
+  <div style="background:var(--teal-600);padding:14px 18px 18px;flex-shrink:0;">
+    <div class="back-btn" onclick="navTo('pg-pac-home')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:16px;font-weight:600;margin-top:8px;">Mis consultas</div>
+  </div>
+  <div class="page-scroll" style="padding:16px;">
+    <div class="hist-item">
+      <div class="hist-top"><div class="hist-name">Movimientos fetales</div><div class="hist-date">Ayer 22:10</div></div>
+      <span class="hist-dec dec-ok">Sin urgencia</span>
+      <div class="hist-sint">Médico de guardia: Dr/a. García · 34 sem</div>
+    </div>
+    <div class="hist-item">
+      <div class="hist-top"><div class="hist-name">Dolor abdominal</div><div class="hist-date">12/06 · 03:15</div></div>
+      <span class="hist-dec dec-consult">Derivada a guardia</span>
+      <div class="hist-sint">Médico de guardia: Dr/a. García · 33 sem</div>
+    </div>
+    <div class="hist-item">
+      <div class="hist-top"><div class="hist-name">Sangrado vaginal</div><div class="hist-date">28/05 · 21:40</div></div>
+      <span class="hist-dec dec-ok">Sin urgencia</span>
+      <div class="hist-sint">Médico de guardia: Dra. López · 30 sem</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: PERFIL PACIENTE
+════════════════════════════════════════ -->
+<div id="pg-pac-perfil" class="page" style="flex-direction:column;">
+  <div style="background:var(--teal-600);padding:14px 18px 18px;flex-shrink:0;">
+    <div class="back-btn" onclick="navTo('pg-pac-home')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:16px;font-weight:600;margin-top:8px;">Mi perfil</div>
+  </div>
+  <div class="page-scroll" style="padding:16px;">
+    <div style="text-align:center;padding:20px 0;">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--teal-50);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;"><i class="ti ti-user-circle" style="font-size:32px;color:var(--teal-600);"></i></div>
+      <div style="font-size:17px;font-weight:700;color:#1a1a1a;">María Laura Fernández</div>
+      <div style="font-size:13px;color:var(--gray-400);margin-top:4px;">Plan Completo · activo</div>
+    </div>
+    <div class="section-card">
+      <div class="sc-hdr"><i class="ti ti-pregnant"></i><span>Datos del embarazo</span></div>
+      <div class="sc-body">
+        <div class="dr"><span class="dk">Semanas</span><span class="dv">34 sem</span></div>
+        <div class="dr"><span class="dk">Tipo</span><span class="dv">Único</span></div>
+        <div class="dr"><span class="dk">Obstetra</span><span class="dv">Dra. Morales</span></div>
+        <div class="dr"><span class="dk">Antecedentes</span><span class="dv danger">HTA · Preeclampsia previa</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="sc-hdr"><i class="ti ti-credit-card"></i><span>Mi membresía</span></div>
+      <div class="sc-body">
+        <div class="dr"><span class="dk">Plan</span><span class="dv">Completo</span></div>
+        <div class="dr"><span class="dk">Próxima facturación</span><span class="dv">14 jul 2025</span></div>
+        <div class="dr"><span class="dk">Monto</span><span class="dv">$4.900/mes</span></div>
+      </div>
+    </div>
+    <button class="btn btn-ghost" style="margin-bottom:10px;" onclick="alert('Gestionar membresía…')"><i class="ti ti-credit-card"></i> Gestionar membresía</button>
+    <button class="btn btn-ghost" style="color:var(--red-600);border-color:var(--red-100);" onclick="navTo('pg-inicio')"><i class="ti ti-logout"></i> Cerrar sesión</button>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: LOGIN PROFESIONAL
+════════════════════════════════════════ -->
+<div id="pg-login-profesional" class="page">
+  <div style="background:var(--blue-800);padding:14px 18px 20px;">
+    <div class="back-btn" onclick="navTo('pg-inicio')"><i class="ti ti-chevron-left"></i></div>
+    <div style="color:white;font-size:18px;font-weight:700;margin-top:8px;">Acceso profesional</div>
+    <div style="color:rgba(255,255,255,.75);font-size:13px;margin-top:4px;">Solo para médicos y empresas habilitadas</div>
+  </div>
+  <div class="page-scroll" style="padding:24px 20px;">
+    <div style="background:var(--blue-50);border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;">
+      <i class="ti ti-info-circle" style="color:var(--blue-600);font-size:18px;flex-shrink:0;margin-top:1px;"></i>
+      <p style="font-size:13px;color:var(--blue-800);line-height:1.5;">Las credenciales son asignadas por el equipo de ObstetriCare. Si no tenés acceso, escribinos a <strong>profesionales@obstetricare.ar</strong></p>
+    </div>
+    <div class="field"><label>Usuario profesional</label><input type="email" id="prof-user" placeholder="usuario@obstetricare.ar"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="prof-pass" placeholder="••••••••"></div>
+    <button class="btn btn-blue" style="margin-bottom:12px;" onclick="loginProfesional()"><i class="ti ti-login"></i> Ingresar</button>
+    <div style="margin-top:8px;">
+      <div style="font-size:12px;color:var(--gray-400);text-align:center;margin-bottom:12px;">— Demo: usá estas credenciales —</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" style="font-size:13px;" onclick="loginDemo('guardia')"><i class="ti ti-stethoscope"></i> Demo médico</button>
+        <button class="btn btn-ghost" style="font-size:13px;" onclick="loginDemo('ambulancia')"><i class="ti ti-ambulance"></i> Demo ambulancia</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: PANEL GUARDIA
+════════════════════════════════════════ -->
+<div id="pg-guardia" class="page" style="flex-direction:column;">
+  <div style="background:var(--blue-800);padding:14px 18px 0;flex-shrink:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;background:rgba(255,255,255,.15);border-radius:9px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-stethoscope" style="color:white;font-size:18px;"></i></div>
+        <div><div style="color:white;font-size:15px;font-weight:600;">Dr/a. García — Guardia</div><div style="color:rgba(255,255,255,.7);font-size:11px;">En línea · 20:00–08:00</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="guardia-badge" style="background:var(--red-400);color:white;font-size:11px;font-weight:700;border-radius:20px;padding:3px 9px;">2</div>
+        <span style="color:rgba(255,255,255,.7);font-size:13px;cursor:pointer;" onclick="navTo('pg-inicio')">Salir</span>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active" id="gtab-a" onclick="gTab('a')"><i class="ti ti-bell"></i><span>Alertas</span></div>
+      <div class="tab-item" id="gtab-h" onclick="gTab('h')"><i class="ti ti-clock-history"></i><span>Historial</span></div>
+    </div>
+  </div>
+  <!-- alertas -->
+  <div id="g-tab-a" class="page-scroll" style="padding:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:15px;font-weight:600;color:#1a1a1a;">Consultas activas</span>
+      <span style="font-size:12px;color:var(--gray-400);">Dom 14 jun · 03:42</span>
+    </div>
+    <div class="alert-card urgente" onclick="gAbrirDetalle('urgente')">
+      <div class="alert-stripe stripe-u"></div>
+      <div class="alert-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+          <div><div style="font-size:15px;font-weight:600;color:#1a1a1a;">María Laura Fernández</div><div style="font-size:11px;color:var(--gray-400);">Hace 4 minutos</div></div>
+          <div style="background:var(--red-50);color:var(--red-800);font-size:11px;font-weight:600;border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:4px;"><i class="ti ti-alert-triangle" style="font-size:12px;"></i> Urgente</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="background:var(--gray-50);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--gray-600);display:flex;align-items:center;gap:4px;"><i class="ti ti-pregnant" style="font-size:13px;"></i> 34 sem</div>
+          <div style="background:var(--gray-50);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--gray-600);">Dra. Morales</div>
+        </div>
+        <div style="font-size:13px;color:#1a1a1a;display:flex;align-items:center;gap:6px;margin-bottom:8px;"><i class="ti ti-droplet" style="color:var(--blue-400);font-size:15px;"></i> Sangrado abundante + dolor continuo</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <div style="background:var(--red-50);border-radius:5px;padding:3px 7px;font-size:11px;color:var(--red-800);font-weight:500;">⚠ Preeclampsia previa</div>
+          <div style="background:var(--red-50);border-radius:5px;padding:3px 7px;font-size:11px;color:var(--red-800);font-weight:500;">⚠ HTA</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button style="flex:1;padding:10px;background:var(--blue-600);color:white;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="event.stopPropagation();gAbrirDetalle('urgente')"><i class="ti ti-video" style="font-size:14px;"></i> Atender</button>
+          <button style="padding:10px 14px;background:white;color:var(--gray-600);border:1.5px solid var(--gray-100);border-radius:9px;font-size:13px;cursor:pointer;" onclick="event.stopPropagation();gAbrirDetalle('urgente')">Resumen</button>
+        </div>
+      </div>
+    </div>
+    <div class="alert-card dudoso" onclick="gAbrirDetalle('dudoso')">
+      <div class="alert-stripe stripe-d"></div>
+      <div class="alert-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+          <div><div style="font-size:15px;font-weight:600;color:#1a1a1a;">Valeria Romero</div><div style="font-size:11px;color:var(--gray-400);">Hace 18 minutos</div></div>
+          <div style="background:var(--amber-50);color:var(--amber-800);font-size:11px;font-weight:600;border-radius:6px;padding:4px 8px;">A evaluar</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="background:var(--gray-50);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--gray-600);display:flex;align-items:center;gap:4px;"><i class="ti ti-pregnant" style="font-size:13px;"></i> 38 sem</div>
+          <div style="background:var(--gray-50);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--gray-600);">Dr. Ponce</div>
+        </div>
+        <div style="font-size:13px;color:#1a1a1a;display:flex;align-items:center;gap:6px;margin-bottom:8px;"><i class="ti ti-brain" style="color:var(--blue-400);font-size:15px;"></i> Cefalea intensa + visión borrosa</div>
+        <div style="display:flex;gap:6px;">
+          <div style="background:var(--amber-50);border-radius:5px;padding:3px 7px;font-size:11px;color:var(--amber-800);font-weight:500;">⚠ Diabetes gestacional</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button style="flex:1;padding:10px;background:var(--blue-600);color:white;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;" onclick="event.stopPropagation();gAbrirDetalle('dudoso')">Evaluar</button>
+          <button style="padding:10px 14px;background:white;color:var(--gray-600);border:1.5px solid var(--gray-100);border-radius:9px;font-size:13px;cursor:pointer;" onclick="event.stopPropagation();gAbrirDetalle('dudoso')">Resumen</button>
+        </div>
+      </div>
+    </div>
+    <div style="height:16px;"></div>
+  </div>
+  <!-- historial -->
+  <div id="g-tab-h" class="page-scroll" style="padding:16px;display:none;">
+    <div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:12px;">Historial de guardia</div>
+    <div class="hist-item"><div class="hist-top"><div class="hist-name">Claudia Paz · 31 sem</div><div class="hist-date">Hoy 01:12</div></div><span class="hist-dec dec-ok">Sin urgencia</span></div>
+    <div class="hist-item"><div class="hist-top"><div class="hist-name">Natalia Suárez · 36 sem</div><div class="hist-date">Ayer 22:48</div></div><span class="hist-dec dec-amb">Ambulancia</span></div>
+    <div class="hist-item"><div class="hist-top"><div class="hist-name">Gabriela Torres · 29 sem</div><div class="hist-date">Ayer 20:15</div></div><span class="hist-dec dec-consult">A guardia</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: DETALLE GUARDIA
+════════════════════════════════════════ -->
+<div id="pg-guardia-detalle" class="page" style="flex-direction:column;">
+  <div style="background:var(--blue-800);padding:14px 18px 18px;flex-shrink:0;">
+    <div class="back-btn" onclick="navTo('pg-guardia')"><i class="ti ti-chevron-left"></i></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:10px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-user-circle" style="color:white;font-size:22px;"></i></div>
+      <div><div style="color:white;font-size:17px;font-weight:700;" id="gdet-nombre"></div><div style="color:rgba(255,255,255,.72);font-size:12px;margin-top:2px;" id="gdet-sub"></div></div>
+    </div>
+  </div>
+  <div class="page-scroll" style="padding:14px;" id="gdet-body"></div>
+  <div class="bottom-bar" id="gdet-bottom" style="display:none;">
+    <button class="btn" id="gdet-btn" disabled onclick="gConfirmar()" style="background:var(--gray-200);color:var(--gray-400);">
+      Completá el checklist y elegí una decisión
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: GUARDIA — DECISIÓN ENVIADA
+════════════════════════════════════════ -->
+<div id="pg-guardia-sent" class="page">
+  <div style="background:var(--blue-800);padding:14px 18px;flex-shrink:0;"><div style="color:white;font-size:16px;font-weight:600;text-align:center;">Decisión registrada</div></div>
+  <div class="sent-wrap">
+    <div class="sent-icon" id="gsent-icon"><i class="ti ti-circle-check"></i></div>
+    <div style="font-size:21px;font-weight:700;margin-bottom:8px;" id="gsent-title"></div>
+    <div style="font-size:14px;color:var(--gray-600);line-height:1.6;max-width:270px;" id="gsent-sub"></div>
+    <div class="sent-card" id="gsent-card"></div>
+    <button class="btn btn-blue" onclick="navTo('pg-guardia')"><i class="ti ti-arrow-left"></i> Volver a alertas</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PÁGINA: PANEL AMBULANCIA
+════════════════════════════════════════ -->
+<div id="pg-ambulancia" class="page" style="flex-direction:column;">
+  <div style="background:var(--red-600);padding:14px 18px 18px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;background:rgba(255,255,255,.15);border-radius:9px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-ambulance" style="color:white;font-size:18px;"></i></div>
+        <div><div style="color:white;font-size:15px;font-weight:600;">SIEM Rosario — Central</div><div style="color:rgba(255,255,255,.7);font-size:11px;">Operativo · en línea</div></div>
+      </div>
+      <span style="color:rgba(255,255,255,.7);font-size:13px;cursor:pointer;" onclick="navTo('pg-inicio')">Salir</span>
+    </div>
+    <div style="background:rgba(255,255,255,.12);border-radius:12px;padding:14px;">
+      <div style="color:white;font-size:16px;font-weight:700;margin-bottom:6px;">María Laura Fernández</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="background:rgba(255,255,255,.18);border-radius:6px;padding:4px 10px;font-size:12px;color:rgba(255,255,255,.9);">34 sem · único</div>
+        <div style="background:rgba(226,75,74,.35);border-radius:6px;padding:4px 10px;font-size:12px;color:#ffb3b3;">HTA · Preeclampsia</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-scroll" style="padding:16px;">
+    <div class="flag-box" style="margin-bottom:14px;">
+      <div class="flag-box-title"><i class="ti ti-alert-triangle"></i> Información clínica crítica</div>
+      <div class="flag-item">Sangrado vaginal abundante + dolor continuo</div>
+      <div class="flag-item">Sospecha de DPPNI — útero hipertónico</div>
+      <div class="flag-item">HTA + preeclampsia previa</div>
+      <div class="flag-item">34 semanas de gestación</div>
+    </div>
+    <div class="section-card" style="margin-bottom:14px;">
+      <div class="sc-hdr"><i class="ti ti-map-pin"></i><span>Datos del traslado</span></div>
+      <div class="sc-body">
+        <div class="dr"><span class="dk">Dirección</span><span class="dv">Bv. Oroño 1240, Rosario</span></div>
+        <div class="dr"><span class="dk">Destino</span><span class="dv">Hosp. Centenario</span></div>
+        <div class="dr"><span class="dk">Activado por</span><span class="dv">Dr/a. García · MP 12345</span></div>
+        <div class="dr"><span class="dk">Hora</span><span class="dv">03:42</span></div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">Actualizar estado</div>
+    <div class="dec-opt sel-ok" id="amb-s1" onclick="selAmbStatus(this,'confirmado')">
+      <div class="dec-icon" style="background:var(--blue-50);"><i class="ti ti-circle-check" style="color:var(--blue-600);"></i></div>
+      <div><div style="font-size:14px;font-weight:600;color:#1a1a1a;">Confirmar y asignar unidad</div><div style="font-size:12px;color:var(--gray-600);margin-top:2px;">Unidad A-07 disponible</div></div>
+      <div class="dec-chk" style="background:var(--blue-400);border-color:var(--blue-400);"><i class="ti ti-check" style="color:white;font-size:12px;"></i></div>
+    </div>
+    <div class="dec-opt" id="amb-s2" onclick="selAmbStatus(this,'camino')">
+      <div class="dec-icon" style="background:var(--amber-50);"><i class="ti ti-ambulance" style="color:var(--amber-400);"></i></div>
+      <div><div style="font-size:14px;font-weight:600;color:#1a1a1a;">En camino al domicilio</div><div style="font-size:12px;color:var(--gray-600);margin-top:2px;">Unidad despachada</div></div>
+      <div class="dec-chk"></div>
+    </div>
+    <div class="dec-opt" id="amb-s3" onclick="selAmbStatus(this,'llegada')">
+      <div class="dec-icon" style="background:var(--green-50);"><i class="ti ti-map-pin" style="color:var(--green-600);"></i></div>
+      <div><div style="font-size:14px;font-weight:600;color:#1a1a1a;">Llegada al domicilio</div><div style="font-size:12px;color:var(--gray-600);margin-top:2px;">Paramédico con la paciente</div></div>
+      <div class="dec-chk"></div>
+    </div>
+    <div style="height:80px;"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-blue" onclick="alert('Estado actualizado. Paciente y médico notificados.')"><i class="ti ti-send"></i> Enviar actualización</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════
+// NAVEGACIÓN — sistema de páginas absolutas
+// Solo una página es .active a la vez
+// ══════════════════════════════════════
+function navTo(id) {
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+  // Scroll al tope de la nueva página
+  const scroll = document.querySelector('#' + id + ' .page-scroll');
+  if (scroll) scroll.scrollTop = 0;
+}
+
+// SPLASH
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('splash').classList.add('hide'), 1800);
+});
+
+// PWA SERVICE WORKER
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// OFFLINE
+window.addEventListener('offline', () => document.querySelectorAll('.offline-bar').forEach(b => b.classList.add('show')));
+window.addEventListener('online',  () => document.querySelectorAll('.offline-bar').forEach(b => b.classList.remove('show')));
+
+// ══════════════════════════════════════
+// LOGIN PACIENTE
+// ══════════════════════════════════════
+function loginPaciente() {
+  const email = document.getElementById('lp-email').value.trim();
+  const pass  = document.getElementById('lp-pass').value;
+  if (!email || !pass) { alert('Completá email y contraseña.'); return; }
+  // Demo: cualquier combinación funciona
+  navTo('pg-pac-home');
+}
+
+// ══════════════════════════════════════
+// PLANES
+// ══════════════════════════════════════
+let planSel = 'completo';
+function selPlan(p) {
+  planSel = p;
+  document.getElementById('plan-basico').classList.toggle('featured', p === 'basico');
+  document.getElementById('plan-completo').classList.toggle('featured', p === 'completo');
+  const nombres = { basico:'Plan Básico', completo:'Plan Completo' };
+  const precios = { basico:'$2.500/mes', completo:'$4.900/mes' };
+  document.getElementById('btn-plan').textContent = 'Continuar con ' + nombres[p];
+  document.getElementById('resumen-plan').textContent = nombres[p];
+  document.getElementById('resumen-precio').textContent = precios[p];
+  document.getElementById('conf-plan').textContent = nombres[p];
+}
+
+function selPago(tipo, el) {
+  document.querySelectorAll('#pg-pago .chip-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function confirmarPago() {
+  navTo('pg-bienvenida-pac');
+}
+
+// ══════════════════════════════════════
+// LOGIN PROFESIONAL
+// ══════════════════════════════════════
+function loginProfesional() {
+  const user = document.getElementById('prof-user').value.trim();
+  const pass = document.getElementById('prof-pass').value;
+  if (!user || !pass) { alert('Completá usuario y contraseña.'); return; }
+  if (user.includes('guardia') || user.includes('medico')) { navTo('pg-guardia'); }
+  else if (user.includes('ambulancia') || user.includes('siem')) { navTo('pg-ambulancia'); }
+  else { alert('Credenciales no reconocidas. Usá los botones de demo para probar.'); }
+}
+
+function loginDemo(rol) {
+  if (rol === 'guardia') navTo('pg-guardia');
+  else navTo('pg-ambulancia');
+}
+
+// ══════════════════════════════════════
+// TRIAGE — SELECCIÓN SÍNTOMA
+// ══════════════════════════════════════
+let sintSelected = null;
+function selSint(el) {
+  document.querySelectorAll('#pg-pac-sintoma .chip-opt').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  sintSelected = el.dataset.s;
+  document.getElementById('btn-sint-next').disabled = false;
+}
+
+// ══════════════════════════════════════
+// TRIAGE — EVALUACIÓN
+// ══════════════════════════════════════
+const evalFlows = {
+  sangrado:{ titulo:'Sangrado vaginal', steps:[
+    {id:'cantidad', label:'¿Cuánto sangrado?', type:'single', opts:[{v:'manchado',t:'Manchado leve',d:'Poca cantidad'},{v:'moderado',t:'Moderado',d:'Como menstruación'},{v:'abundante',t:'Abundante',d:'Empapa la ropa'}]},
+    {id:'color',    label:'¿De qué color?', type:'single', opts:[{v:'rojo',t:'Rojo brillante'},{v:'oscuro',t:'Oscuro / marrón'},{v:'rosado',t:'Rosado'}]},
+    {id:'dolor',    label:'¿Hay dolor asociado?', type:'toggle', opts:['Sí','No']},
+    {id:'inicio',   label:'¿Cómo empezó?', type:'single', opts:[{v:'subito',t:'De golpe, súbito'},{v:'progresivo',t:'Fue aumentando'},{v:'intermitente',t:'Va y viene'}]}
+  ]},
+  dolor:{ titulo:'Dolor abdominal', steps:[
+    {id:'tipo',   label:'¿Cómo es el dolor?', type:'single', opts:[{v:'continuo',t:'Continuo',d:'No cesa'},{v:'colico',t:'En cólicos',d:'Va y viene'},{v:'puntada',t:'Puntada localizada'}]},
+    {id:'utero',  label:'¿El útero está duro como tabla?', type:'toggle', opts:['Sí','No lo sé','No']},
+    {id:'zona',   label:'¿Dónde duele más?', type:'single', opts:[{v:'todo',t:'Todo el abdomen'},{v:'bajo',t:'Parte baja'},{v:'alto',t:'Parte alta / epigastrio'}]},
+    {id:'intens', label:'Intensidad (1 al 10)', type:'range'}
+  ]},
+  movimientos:{ titulo:'Movimientos fetales', steps:[
+    {id:'estado', label:'¿Cómo están los movimientos?', type:'single', opts:[{v:'disminuidos',t:'Disminuidos',d:'Menos que de costumbre'},{v:'ausentes',t:'Ausentes',d:'No siento nada'},{v:'diferentes',t:'Diferentes'}]},
+    {id:'tiempo', label:'¿Hace cuánto notás el cambio?', type:'single', opts:[{v:'horas',t:'Pocas horas'},{v:'dia',t:'Más de 12 hs'},{v:'dias',t:'Más de 24 hs'}]},
+    {id:'conteo', label:'¿Hiciste conteo de movimientos?', type:'toggle', opts:['Sí, menos de 10','Sí, son normales','No conté']}
+  ]},
+  neurologico:{ titulo:'Síntomas neurológicos', steps:[
+    {id:'sint',  label:'¿Cuál es el síntoma principal?', type:'multi', opts:['Cefalea intensa','Visión borrosa o con puntos','Dolor en boca del estómago','Náuseas / vómitos','Hinchazón de manos o cara']},
+    {id:'hta',   label:'¿Tenés la tensión alta?', type:'toggle', opts:['Sí','No sé','No']},
+    {id:'inicio',label:'¿Cuándo empezó?', type:'single', opts:[{v:'min',t:'Hace minutos'},{v:'horas',t:'Pocas horas'},{v:'ayer',t:'Desde ayer'}]}
+  ]},
+  liquido:{ titulo:'Pérdida de líquido', steps:[
+    {id:'tipo',  label:'¿Cómo es el líquido?', type:'single', opts:[{v:'claro',t:'Claro, como agua'},{v:'amarillo',t:'Amarillento'},{v:'sangre',t:'Teñido con sangre'},{v:'verdoso',t:'Verdoso o turbio'}]},
+    {id:'flujo', label:'¿Cómo sale?', type:'single', opts:[{v:'continuo',t:'Continuo, no puedo controlarlo'},{v:'chorro',t:'Salió en chorro'},{v:'gotas',t:'En gotas'}]},
+    {id:'olor',  label:'¿Tiene olor particular?', type:'toggle', opts:['Sí, diferente','Sin olor notable']}
+  ]},
+  otro:{ titulo:'Otro síntoma', steps:[
+    {id:'desc',  label:'¿Qué estás sintiendo?', type:'multi', opts:['Fiebre o escalofríos','Dificultad para respirar','Hinchazón de piernas','Picazón generalizada','Presión o peso pelviano','Otro no listado']},
+    {id:'tiempo',label:'¿Hace cuánto tiempo?', type:'single', opts:[{v:'1h',t:'Menos de 1 hora'},{v:'6h',t:'Entre 1 y 6 hs'},{v:'mas',t:'Más de 6 hs'}]}
+  ]}
+};
+
+let curFlow = [], curStep = 0, respuestas = {};
+
+// Se llama al entrar a pg-pac-eval
+document.getElementById('pg-pac-sintoma').addEventListener('click', () => {}, false);
+
+// Override navTo para inicializar eval cuando corresponde
+const _navTo = navTo;
+window.navTo = function(id) {
+  if (id === 'pg-pac-eval') {
+    respuestas = {}; curStep = 0;
+    const flow = evalFlows[sintSelected] || evalFlows['otro'];
+    curFlow = flow.steps;
+    document.getElementById('eval-titulo').textContent = flow.titulo;
+    renderEvalStep();
+  }
+  _navTo(id);
+};
+
+function renderEvalStep() {
+  const step = curFlow[curStep];
+  const total = curFlow.length, curr = curStep + 1;
+  document.getElementById('prog-label').textContent = `Paso ${curr} de ${total}`;
+  document.getElementById('prog-fill').style.width = `${Math.round(curr/total*100)}%`;
+  document.getElementById('btn-eval-next').disabled = true;
+
+  let html = `<div style="font-size:17px;font-weight:600;color:#1a1a1a;margin-bottom:16px;">${step.label}</div>`;
+
+  if (step.type === 'single') {
+    html += step.opts.map(o => `<div class="chip-opt" data-step="${step.id}" data-v="${o.v}" onclick="selEvalOpt(this,'${step.id}')">
+      <div><div class="chip-name">${o.t}</div>${o.d ? `<div class="chip-desc">${o.d}</div>` : ''}</div>
+      <div class="chip-chk"><i class="ti ti-check"></i></div></div>`).join('');
+  } else if (step.type === 'toggle') {
+    html += `<div class="tog-row">` + step.opts.map(o =>
+      `<button class="tog-btn" data-step="${step.id}" data-v="${o}" onclick="selToggle(this,'${step.id}')">${o}</button>`
+    ).join('') + `</div>`;
+  } else if (step.type === 'multi') {
+    html += step.opts.map(o => `<div class="mc-opt" data-step="${step.id}" data-v="${o}" onclick="togMulti(this,'${step.id}')">
+      <div class="mc-box"><i class="ti ti-check"></i></div><div style="font-size:14px;color:#1a1a1a;">${o}</div></div>`).join('');
+  } else if (step.type === 'range') {
+    const sv = respuestas[step.id] || 5;
+    html += `<div style="padding:20px 0;text-align:center;">
+      <div style="font-size:52px;font-weight:800;color:var(--teal-600);" id="rv">${sv}</div>
+      <div style="font-size:13px;color:var(--gray-400);margin-bottom:20px;">de 10</div>
+      <input type="range" min="1" max="10" value="${sv}" oninput="document.getElementById('rv').textContent=this.value;respuestas['${step.id}']=+this.value;document.getElementById('btn-eval-next').disabled=false;" style="width:100%;">
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--gray-400);"><span>Sin dolor</span><span>Insoportable</span></div></div>`;
+    setTimeout(() => document.getElementById('btn-eval-next').disabled = false, 50);
+  }
+
+  // Banderas rojas
+  const rf = getRedFlag();
+  if (rf) html += `<div class="red-alert"><i class="ti ti-alert-circle"></i><div class="red-alert-text"><strong>Señal de alarma</strong>${rf}</div></div>`;
+
+  document.getElementById('eval-content').innerHTML = html;
+
+  // Restaurar selección previa
+  const prev = respuestas[step.id];
+  if (prev) {
+    document.querySelectorAll(`[data-step="${step.id}"]`).forEach(el => {
+      if (step.type === 'multi') { if (Array.isArray(prev) && prev.includes(el.dataset.v)) el.classList.add('sel'); }
+      else { if (el.dataset.v === prev || el.textContent.trim() === prev) el.classList.add('sel'); }
+    });
+    if ((Array.isArray(prev) && prev.length) || (!Array.isArray(prev) && prev))
+      document.getElementById('btn-eval-next').disabled = false;
+  }
+}
+
+function getRedFlag() {
+  const s = sintSelected, r = respuestas;
+  if (s==='sangrado' && r.dolor==='Sí') return 'Sangrado + dolor puede ser una urgencia grave.';
+  if (s==='dolor' && r.utero==='Sí' && r.tipo==='continuo') return 'Dolor continuo + útero hipertónico requiere evaluación inmediata.';
+  if (s==='movimientos' && (r.estado==='ausentes' || r.tiempo==='dias')) return 'Ausencia prolongada de movimientos fetales. No esperes.';
+  if (s==='neurologico' && r.hta==='Sí') return 'Síntomas neurológicos + HTA: posible preeclampsia grave.';
+  if (s==='liquido' && r.tipo==='verdoso') return 'Líquido verdoso puede indicar meconio. Urgencia fetal.';
+  return '';
+}
+
+function selEvalOpt(el, sid) {
+  document.querySelectorAll(`[data-step="${sid}"]`).forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel'); respuestas[sid] = el.dataset.v;
+  document.getElementById('btn-eval-next').disabled = false;
+  setTimeout(() => renderEvalStep(), 60);
+}
+function selToggle(el, sid) {
+  document.querySelectorAll(`[data-step="${sid}"]`).forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel'); respuestas[sid] = el.dataset.v;
+  document.getElementById('btn-eval-next').disabled = false;
+  setTimeout(() => renderEvalStep(), 60);
+}
+function togMulti(el, sid) {
+  el.classList.toggle('sel');
+  const sel = [...document.querySelectorAll(`[data-step="${sid}"].sel`)].map(e => e.dataset.v);
+  respuestas[sid] = sel;
+  document.getElementById('btn-eval-next').disabled = sel.length === 0;
+}
+function nextEvalStep() {
+  curStep++;
+  if (curStep >= curFlow.length) {
+    navTo('pg-pac-loading');
+    setTimeout(() => { calcRiesgo(); renderResultado(); navTo('pg-pac-resultado'); }, 2000);
+  } else {
+    renderEvalStep();
+  }
+}
+
+function calcRiesgo() {
+  const s = sintSelected, r = respuestas;
+  let riesgo = 'bajo';
+  if (s==='sangrado') {
+    if (r.cantidad==='abundante') riesgo='alto';
+    else if (r.cantidad==='moderado' && r.dolor==='Sí') riesgo='alto';
+    else if (r.inicio==='subito') riesgo='medio';
+  } else if (s==='dolor') {
+    if (r.tipo==='continuo' && r.utero==='Sí') riesgo='alto';
+    else if (r.tipo==='continuo' || (r.intens && r.intens>=7)) riesgo='medio';
+  } else if (s==='movimientos') {
+    if (r.estado==='ausentes' || r.tiempo==='dias') riesgo='alto';
+    else if (r.tiempo==='dia' || r.estado==='disminuidos') riesgo='medio';
+  } else if (s==='neurologico') {
+    if (r.hta==='Sí') riesgo='alto';
+    else riesgo='medio';
+  } else if (s==='liquido') {
+    if (r.tipo==='verdoso' || r.flujo==='continuo') riesgo='alto';
+    else if (r.flujo==='chorro' || r.tipo==='sangre') riesgo='medio';
+  } else { riesgo='medio'; }
+  window._riesgo = riesgo;
+}
+
+function renderResultado() {
+  const riesgo = window._riesgo;
+  const hora = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const sintLabels = {sangrado:'Sangrado vaginal',dolor:'Dolor abdominal',movimientos:'Movimientos fetales',neurologico:'Síntomas neurológicos',liquido:'Pérdida de líquido',otro:'Otro síntoma'};
+  const cfg = {
+    alto:   { bg:'var(--red-50)',   ic:'var(--red-600)',   icon:'ti-alert-triangle', label:'URGENCIA GRAVE',         msg:'Tu situación requiere evaluación médica inmediata.', btnBg:'var(--red-600)',   btnTxt:'Iniciar teleconsulta urgente', btnIc:'ti-video', numBg:'var(--red-50)',   numC:'var(--red-600)',   acc:['Un obstetra de guardia revisará tu caso ahora','Si lo considera necesario, activará una ambulancia','Tu obstetra personal será notificado de inmediato'] },
+    medio:  { bg:'var(--amber-50)', ic:'var(--amber-400)', icon:'ti-alert-circle',   label:'REQUIERE EVALUACIÓN',    msg:'Tu situación necesita ser evaluada para descartar urgencia.', btnBg:'var(--amber-400)', btnTxt:'Iniciar teleconsulta', btnIc:'ti-video', numBg:'var(--amber-50)', numC:'var(--amber-400)', acc:['El obstetra de guardia evalúa tu caso','Te indicará si ir a guardia o esperar','No modifiques medicación sin indicación'] },
+    bajo:   { bg:'var(--green-50)', ic:'var(--green-600)', icon:'ti-circle-check',   label:'SIN URGENCIA INMEDIATA', msg:'Tus síntomas no sugieren una urgencia obstétrica inmediata.', btnBg:'var(--green-600)', btnTxt:'Avisar a mi obstetra', btnIc:'ti-send', numBg:'var(--green-50)', numC:'var(--green-600)', acc:['Contactá a tu obstetra en el próximo turno','Si los síntomas cambian, consultá de nuevo','Ante cualquier duda, llamá al 107'] }
+  };
+  const c = cfg[riesgo];
+  document.getElementById('res-header').innerHTML = `<div style="padding:28px 20px 20px;text-align:center;">
+    <div style="width:78px;height:78px;border-radius:50%;background:${c.bg};display:flex;align-items:center;justify-content:center;margin:0 auto 14px;"><i class="ti ${c.icon}" style="font-size:36px;color:${c.ic};"></i></div>
+    <div style="font-size:20px;font-weight:700;color:${c.ic};margin-bottom:6px;">${c.label}</div>
+    <div style="font-size:14px;color:var(--gray-600);line-height:1.5;max-width:280px;margin:0 auto;">${c.msg}</div>
+  </div>`;
+  document.getElementById('res-body').innerHTML = `
+    <div class="section-card" style="margin-bottom:12px;">
+      <div class="sc-hdr"><i class="ti ti-file-description"></i><span>Resumen</span></div>
+      <div class="sc-body">
+        <div class="dr"><span class="dk">Síntoma</span><span class="dv">${sintLabels[sintSelected]||sintSelected}</span></div>
+        <div class="dr"><span class="dk">Hora</span><span class="dv">${hora}</span></div>
+      </div>
+    </div>
+    <div class="section-card" style="margin-bottom:16px;">
+      <div class="sc-hdr"><i class="ti ti-list-check"></i><span>Pasos siguientes</span></div>
+      <div class="sc-body">${c.acc.map((a,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--gray-50);"><div style="width:26px;height:26px;border-radius:50%;background:${c.numBg};color:${c.numC};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;">${i+1}</div><div style="font-size:14px;color:#1a1a1a;line-height:1.4;">${a}</div></div>`).join('')}</div>
+    </div>`;
+  document.getElementById('res-actions').innerHTML = `
+    <button class="btn" style="background:${c.btnBg};margin-bottom:10px;" onclick="alert('Conectando…')"><i class="ti ${c.btnIc}"></i> ${c.btnTxt}</button>
+    <button class="btn btn-ghost" onclick="navTo('pg-pac-home')">Volver al inicio</button>`;
+}
+
+// ══════════════════════════════════════
+// PANEL GUARDIA
+// ══════════════════════════════════════
+function gTab(t) {
+  document.getElementById('g-tab-a').style.display = t==='a' ? 'block' : 'none';
+  document.getElementById('g-tab-h').style.display = t==='h' ? 'block' : 'none';
+  ['a','h'].forEach(x => {
+    const el = document.getElementById('gtab-'+x);
+    const active = x === t;
+    el.classList.toggle('active', active);
+    el.querySelector('i').style.color = active ? 'white' : 'rgba(255,255,255,.5)';
+    el.querySelector('span').style.color = active ? 'white' : 'rgba(255,255,255,.5)';
+  });
+}
+
+const gCasos = {
+  urgente:{ nombre:'María Laura Fernández', sub:'34 sem · único · Dra. Morales', eg:34, tipo:'único', antec:['HTA','Preeclampsia previa'], sintoma:'Sangrado vaginal', resp:[{k:'Cantidad',v:'Abundante',d:true},{k:'Color',v:'Rojo brillante',d:false},{k:'Dolor',v:'Continuo',d:true},{k:'Inicio',v:'Súbito',d:true}], flags:['Sangrado abundante + dolor + EG 34 sem','HTA + preeclampsia previa','Inicio súbito: DPPNI probable'] },
+  dudoso:{ nombre:'Valeria Romero', sub:'38 sem · único · Dr. Ponce', eg:38, tipo:'único', antec:['Diabetes gestacional'], sintoma:'Síntomas neurológicos', resp:[{k:'Síntoma',v:'Cefalea + visión borrosa',d:true},{k:'TA',v:'No sabe',d:false},{k:'Epigastralgia',v:'Leve',d:true}], flags:['Cefalea + visión borrosa: descartar preeclampsia severa','Diabetes gestacional'] }
+};
+
+let gChecks = new Set(), gDecision = null, gPac = null;
+
+function gAbrirDetalle(nivel) {
+  gPac = gCasos[nivel]; gChecks = new Set(); gDecision = null;
+  document.getElementById('gdet-nombre').textContent = gPac.nombre;
+  document.getElementById('gdet-sub').textContent = gPac.sub;
+  renderGDet();
+  navTo('pg-guardia-detalle');
+}
+
+function renderGDet() {
+  const p = gPac;
+  const flagsHtml = p.flags.length ? `<div class="flag-box"><div class="flag-box-title"><i class="ti ti-alert-triangle"></i> Banderas rojas</div>${p.flags.map(f=>`<div class="flag-item">${f}</div>`).join('')}</div>` : '';
+  const respHtml = p.resp.map(r=>`<div class="dr"><span class="dk">${r.k}</span><span class="dv${r.d?' danger':''}">${r.v}</span></div>`).join('');
+  const chks = ['Identidad confirmada','Ubicación confirmada',`EG: ${p.eg} sem confirmada`,'Acompañada o sola','Revisé antecedentes'];
+  const chkHtml = chks.map((c,i)=>`<div class="chk-step" onclick="gTogChk(${i},this)">
+    <div class="chk-circle" id="gc${i}"><i class="ti ti-check"></i></div>
+    <span class="chk-text" id="gct${i}">${c}</span></div>`).join('');
+
+  document.getElementById('gdet-body').innerHTML = `
+    ${flagsHtml}
+    <div class="section-card" style="margin-bottom:12px;">
+      <div class="sc-hdr" style="background:var(--blue-50);"><i class="ti ti-video" style="color:var(--blue-600);"></i><span style="color:var(--blue-800);">Teleconsulta activa</span></div>
+      <div style="background:#0d1b2a;padding:20px;text-align:center;">
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;"><i class="ti ti-user-circle" style="color:rgba(255,255,255,.6);font-size:26px;"></i></div>
+        <div style="color:rgba(255,255,255,.85);font-size:14px;font-weight:500;">${p.nombre}</div>
+        <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:4px;"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4CAF50;margin-right:5px;"></span>Conectada</div>
+        <div style="display:flex;justify-content:center;gap:14px;margin-top:14px;">
+          <button style="width:42px;height:42px;border-radius:50%;background:#2d3748;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="ti ti-microphone-off" style="color:white;font-size:18px;"></i></button>
+          <button style="width:42px;height:42px;border-radius:50%;background:#2d3748;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="ti ti-video" style="color:white;font-size:18px;"></i></button>
+          <button style="width:42px;height:42px;border-radius:50%;background:var(--red-600);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="ti ti-phone-off" style="color:white;font-size:18px;"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="section-card" style="margin-bottom:12px;">
+      <div class="sc-hdr"><i class="ti ti-file-description"></i><span>Resumen clínico</span></div>
+      <div class="sc-body">
+        <div class="dr"><span class="dk">EG</span><span class="dv">${p.eg} sem · ${p.tipo}</span></div>
+        <div class="dr"><span class="dk">Antecedentes</span><span class="dv danger">${p.antec.join(', ')}</span></div>
+        <div class="dr"><span class="dk">Síntoma</span><span class="dv">${p.sintoma}</span></div>
+      </div>
+    </div>
+    <div class="section-card" style="margin-bottom:12px;">
+      <div class="sc-hdr"><i class="ti ti-clipboard-list"></i><span>Respuestas del triage</span></div>
+      <div class="sc-body">${respHtml}</div>
+    </div>
+    <div class="section-card" style="margin-bottom:12px;">
+      <div class="sc-hdr"><i class="ti ti-checks"></i><span>Verificación antes de decidir</span></div>
+      ${chkHtml}
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">Decisión final</div>
+      <div class="dec-opt" id="dec-ok" onclick="gSelDec('ok',this)">
+        <div class="dec-icon" style="background:var(--green-50);"><i class="ti ti-circle-check" style="color:var(--green-600);"></i></div>
+        <div><div style="font-size:14px;font-weight:600;color:#1a1a1a;">Sin urgencia inmediata</div><div style="font-size:12px;color:var(--gray-600);margin-top:2px;">Puede esperar y consultar con su obstetra</div></div>
+        <div class="dec-chk"></div>
+      </div>
+      <div class="dec-opt" id="dec-consult" onclick="gSelDec('consult',this)">
+        <div class="dec-icon" style="background:var(--amber-50);"><i class="ti ti-building-hospital" style="color:var(--amber-400);"></i></div>
+        <div><div style="font-size:14px;font-weight:600;color:#1a1a1a;">Evaluar en guardia</div><div style="font-size:12px;color:var(--gray-600);margin-top:2px;">Urgencia sin ambulancia</div></div>
+        <div class="dec-chk"></div>
+      </div>
+      <div class="dec-opt" id="dec-amb" onclick="gSelDec('amb',this)">
+        <div class="dec-icon" style="background:var(--red-50);"><i class="ti ti-ambulance" style="color:var(--red-600);"></i></div>
+        <div><div style="font-size:14px;font-weight:600;color:#1a1a1a;">Activar ambulancia</div><div style="font-size:12px;color:var(--gray-600);margin-top:2px;">Urgencia grave — traslado inmediato</div></div>
+        <div class="dec-chk"></div>
+      </div>
+      <div id="gjustif-box" style="display:none;margin-top:10px;">
+        <label style="font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:6px;">Justificación clínica (obligatoria)</label>
+        <textarea rows="3" placeholder="Ej: DPPNI probable…" oninput="gUpdBtn()" style="border:1.5px solid var(--gray-100);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;resize:none;outline:none;width:100%;"></textarea>
+      </div>
+    </div>
+    <div style="height:80px;"></div>`;
+
+  document.getElementById('gdet-bottom').style.display = 'block';
+  gUpdBtn();
+}
+
+function gTogChk(i, el) {
+  const c = document.getElementById('gc'+i), t = document.getElementById('gct'+i);
+  if (gChecks.has(i)) { gChecks.delete(i); c.classList.remove('done'); t.classList.remove('done-text'); }
+  else { gChecks.add(i); c.classList.add('done'); t.classList.add('done-text'); }
+  gUpdBtn();
+}
+
+function gSelDec(val, el) {
+  document.querySelectorAll('#gdet-body .dec-opt').forEach(o => {
+    o.classList.remove('sel-ok','sel-consult','sel-amb');
+  });
+  el.classList.add('sel-'+val);
+  gDecision = val;
+  const jbox = document.getElementById('gjustif-box');
+  if (jbox) jbox.style.display = val==='amb' ? 'block' : 'none';
+  gUpdBtn();
+}
+
+function gUpdBtn() {
+  const btn = document.getElementById('gdet-btn');
+  if (!btn) return;
+  const allChk = gChecks.size >= 5;
+  const dec = !!gDecision;
+  const justifOk = gDecision==='amb'
+    ? (document.querySelector('#gjustif-box textarea')?.value?.trim()?.length > 10)
+    : true;
+  const ready = allChk && dec && justifOk;
+  btn.disabled = !ready;
+  const colors = {ok:'var(--green-600)',consult:'var(--amber-400)',amb:'var(--red-600)'};
+  const labels = {ok:'Confirmar: sin urgencia',consult:'Confirmar: derivar a guardia',amb:'Confirmar y activar ambulancia'};
+  const icons  = {ok:'ti-circle-check',consult:'ti-building-hospital',amb:'ti-ambulance'};
+  if (ready) {
+    btn.style.background = colors[gDecision]; btn.style.color = 'white';
+    btn.innerHTML = `<i class="ti ${icons[gDecision]}" style="font-size:15px;"></i> ${labels[gDecision]}`;
+  } else {
+    btn.style.background = 'var(--gray-200)'; btn.style.color = 'var(--gray-400)';
+    btn.innerHTML = 'Completá el checklist y elegí una decisión';
+  }
+}
+
+function gConfirmar() {
+  const hora = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const decLabels = {ok:'Sin urgencia inmediata',consult:'Derivada a guardia',amb:'Ambulancia activada'};
+  const colors = {ok:'var(--green-600)',consult:'var(--amber-400)',amb:'var(--red-600)'};
+  const bgs    = {ok:'var(--green-50)',consult:'var(--amber-50)',amb:'var(--red-50)'};
+  const icons  = {ok:'ti-circle-check',consult:'ti-building-hospital',amb:'ti-ambulance'};
+  const iw = document.getElementById('gsent-icon');
+  iw.style.background = bgs[gDecision];
+  iw.querySelector('i').className = `ti ti-${icons[gDecision]}`;
+  iw.querySelector('i').style.color = colors[gDecision];
+  document.getElementById('gsent-title').textContent = gDecision==='amb' ? 'Ambulancia activada' : 'Decisión registrada';
+  document.getElementById('gsent-sub').textContent = 'La decisión fue registrada y el obstetra personal fue notificado.';
+  document.getElementById('gsent-card').innerHTML = `
+    <div class="sc-row"><span class="sc-k">Paciente</span><span class="sc-v">${gPac.nombre}</span></div>
+    <div class="sc-row"><span class="sc-k">Decisión</span><span class="sc-v">${decLabels[gDecision]}</span></div>
+    <div class="sc-row"><span class="sc-k">Hora</span><span class="sc-v">${hora}</span></div>
+    <div class="sc-row"><span class="sc-k">Médico</span><span class="sc-v">Dr/a. García</span></div>`;
+  const b = document.getElementById('guardia-badge');
+  const n = Math.max(0, parseInt(b.textContent) - 1);
+  b.textContent = n; b.style.display = n > 0 ? '' : 'none';
+  navTo('pg-guardia-sent');
+}
+
+// AMBULANCIA
+function selAmbStatus(el, val) {
+  ['amb-s1','amb-s2','amb-s3'].forEach(id => {
+    const o = document.getElementById(id);
+    o.classList.remove('sel-ok','sel-consult','sel-amb');
+    o.querySelector('.dec-chk').innerHTML = '';
+  });
+  el.classList.add('sel-ok');
+  el.querySelector('.dec-chk').innerHTML = '<i class="ti ti-check" style="color:white;font-size:12px;"></i>';
+  el.querySelector('.dec-chk').style.background = 'var(--blue-400)';
+  el.querySelector('.dec-chk').style.borderColor = 'var(--blue-400)';
+}
+</script>
+</body>
+</html>
