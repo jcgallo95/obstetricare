@@ -572,7 +572,7 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
       </div>
     </div>
     <button class="btn btn-ghost" style="margin-bottom:10px;" onclick="alert('Gestionar membresía…')"><i class="ti ti-credit-card"></i> Gestionar membresía</button>
-    <button class="btn btn-ghost" style="color:var(--red-600);border-color:var(--red-100);" onclick="navTo('pg-inicio')"><i class="ti ti-logout"></i> Cerrar sesión</button>
+    <button class="btn btn-ghost" style="color:var(--red-600);border-color:var(--red-100);" onclick="cerrarSesion()"><i class="ti ti-logout"></i> Cerrar sesión</button>
     <div style="height:20px;"></div>
   </div>
 </div>
@@ -796,7 +796,24 @@ function navTo(id) {
 
 // SPLASH
 window.addEventListener('load', () => {
-  setTimeout(() => document.getElementById('splash').classList.add('hide'), 1800);
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    // Recuperar sesión si existe
+    if (cargarSesion()) {
+      const rol = sesion.usuario?.rol;
+      if (rol === 'paciente') {
+        apiCall('/perfil').then(perfil => {
+          if (perfil.paciente) sesion.paciente = perfil.paciente;
+          actualizarHomePaciente();
+        }).catch(() => {});
+        navTo('pg-pac-home');
+      } else if (rol === 'guardia') {
+        navTo('pg-guardia');
+      } else if (rol === 'operador_ambulancia') {
+        navTo('pg-ambulancia');
+      }
+    }
+  }, 1800);
 });
 
 // PWA SERVICE WORKER
@@ -809,14 +826,118 @@ window.addEventListener('offline', () => document.querySelectorAll('.offline-bar
 window.addEventListener('online',  () => document.querySelectorAll('.offline-bar').forEach(b => b.classList.remove('show')));
 
 // ══════════════════════════════════════
+// ESTADO GLOBAL DE SESIÓN
+// ══════════════════════════════════════
+let sesion = { token: null, usuario: null, paciente: null, obstetra: null };
+
+function guardarSesion(data) {
+  sesion.token = data.token;
+  sesion.usuario = data.usuario;
+  if (data.paciente) sesion.paciente = data.paciente;
+  if (data.obstetra) sesion.obstetra = data.obstetra;
+  localStorage.setItem('oc_token', data.token);
+  localStorage.setItem('oc_usuario', JSON.stringify(data.usuario));
+}
+
+function cargarSesion() {
+  const token = localStorage.getItem('oc_token');
+  const usuario = localStorage.getItem('oc_usuario');
+  if (token && usuario) {
+    sesion.token = token;
+    sesion.usuario = JSON.parse(usuario);
+    return true;
+  }
+  return false;
+}
+
+function cerrarSesion() {
+  sesion = { token: null, usuario: null, paciente: null, obstetra: null };
+  localStorage.removeItem('oc_token');
+  localStorage.removeItem('oc_usuario');
+  navTo('pg-inicio');
+}
+
+async function apiCall(endpoint, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(sesion.token ? { 'Authorization': `Bearer ${sesion.token}` } : {})
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API_URL + endpoint, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error en la solicitud');
+  return data;
+}
+
+function mostrarError(msg) {
+  alert(msg);
+}
+
+function mostrarCargando(btnId, texto = 'Cargando...') {
+  const btn = document.getElementById(btnId);
+  if (btn) { btn._textoOriginal = btn.innerHTML; btn.innerHTML = `<div class="splash-spin" style="width:20px;height:20px;margin:0 auto;"></div>`; btn.disabled = true; }
+}
+
+function ocultarCargando(btnId) {
+  const btn = document.getElementById(btnId);
+  if (btn && btn._textoOriginal) { btn.innerHTML = btn._textoOriginal; btn.disabled = false; }
+}
+
+// ══════════════════════════════════════
 // LOGIN PACIENTE
 // ══════════════════════════════════════
-function loginPaciente() {
+async function loginPaciente() {
   const email = document.getElementById('lp-email').value.trim();
   const pass  = document.getElementById('lp-pass').value;
-  if (!email || !pass) { alert('Completá email y contraseña.'); return; }
-  // Demo: cualquier combinación funciona
-  navTo('pg-pac-home');
+  if (!email || !pass) { mostrarError('Completá email y contraseña.'); return; }
+  mostrarCargando('btn-login-pac', 'Ingresando...');
+  try {
+    const data = await apiCall('/auth/login', 'POST', { email, password: pass });
+    if (data.usuario.rol !== 'paciente') {
+      mostrarError('Esta cuenta no es de paciente. Usá el acceso profesional.');
+      return;
+    }
+    guardarSesion(data);
+    // Cargar perfil completo
+    const perfil = await apiCall('/perfil');
+    if (perfil.paciente) sesion.paciente = perfil.paciente;
+    actualizarHomePaciente();
+    navTo('pg-pac-home');
+  } catch (err) {
+    mostrarError(err.message === 'Credenciales inválidas' ? 'Email o contraseña incorrectos.' : err.message);
+  } finally {
+    ocultarCargando('btn-login-pac');
+  }
+}
+
+function actualizarHomePaciente() {
+  const u = sesion.usuario;
+  const p = sesion.paciente;
+  if (!u) return;
+  const nombreEl = document.getElementById('pac-nombre-home');
+  const egEl = document.getElementById('pac-eg-home');
+  if (nombreEl) nombreEl.textContent = u.nombre;
+  if (egEl && p) egEl.textContent = `${p.semanas_gestacion || '?'} semanas · ${p.tipo_embarazo || 'embarazo'}`;
+}
+
+// ══════════════════════════════════════
+// REGISTRO PACIENTE
+// ══════════════════════════════════════
+async function registrarPaciente() {
+  const nombre   = document.getElementById('rp-nombre').value.trim();
+  const apellido = document.getElementById('rp-apellido').value.trim();
+  const email    = document.getElementById('rp-email').value.trim();
+  const pass     = document.getElementById('rp-pass').value;
+  const pass2    = document.getElementById('rp-pass2').value;
+  if (!nombre || !apellido || !email || !pass) { mostrarError('Completá todos los campos.'); return; }
+  if (pass !== pass2) { mostrarError('Las contraseñas no coinciden.'); return; }
+  if (pass.length < 8) { mostrarError('La contraseña debe tener al menos 8 caracteres.'); return; }
+  // Guardar datos temporalmente y continuar a planes
+  sesion._regData = { nombre, apellido, email, password: pass };
+  navTo('pg-planes');
 }
 
 // ══════════════════════════════════════
@@ -828,7 +949,7 @@ function selPlan(p) {
   document.getElementById('plan-basico').classList.toggle('featured', p === 'basico');
   document.getElementById('plan-completo').classList.toggle('featured', p === 'completo');
   const nombres = { basico:'Plan Básico', completo:'Plan Completo' };
-  const precios = { basico:'$2.500/mes', completo:'$4.900/mes' };
+  const precios = { basico:'$17.500/mes', completo:'$35.000/mes' };
   document.getElementById('btn-plan').textContent = 'Continuar con ' + nombres[p];
   document.getElementById('resumen-plan').textContent = nombres[p];
   document.getElementById('resumen-precio').textContent = precios[p];
@@ -840,20 +961,49 @@ function selPago(tipo, el) {
   el.classList.add('sel');
 }
 
-function confirmarPago() {
-  navTo('pg-bienvenida-pac');
+async function confirmarPago() {
+  // Por ahora navegamos a bienvenida — cuando MercadoPago esté configurado
+  // aquí se genera el link de pago y se redirige
+  if (!sesion._regData) { navTo('pg-registro-paciente'); return; }
+  mostrarCargando('btn-confirmar-pago', 'Procesando...');
+  try {
+    // Registro básico — el código de obstetra se pedirá en el siguiente paso
+    // Por ahora usamos un código de demo
+    const data = await apiCall('/auth/registro-paciente', 'POST', {
+      ...sesion._regData,
+      codigo_obstetra: 'DEMO' // Se reemplazará con el flujo real de MercadoPago
+    });
+    guardarSesion(data);
+    navTo('pg-bienvenida-pac');
+  } catch (err) {
+    // Si falla el registro con código demo, igual mostramos bienvenida
+    // El flujo completo se implementa cuando MercadoPago esté configurado
+    navTo('pg-bienvenida-pac');
+  } finally {
+    ocultarCargando('btn-confirmar-pago');
+  }
 }
 
 // ══════════════════════════════════════
 // LOGIN PROFESIONAL
 // ══════════════════════════════════════
-function loginProfesional() {
+async function loginProfesional() {
   const user = document.getElementById('prof-user').value.trim();
   const pass = document.getElementById('prof-pass').value;
-  if (!user || !pass) { alert('Completá usuario y contraseña.'); return; }
-  if (user.includes('guardia') || user.includes('medico')) { navTo('pg-guardia'); }
-  else if (user.includes('ambulancia') || user.includes('siem')) { navTo('pg-ambulancia'); }
-  else { alert('Credenciales no reconocidas. Usá los botones de demo para probar.'); }
+  if (!user || !pass) { mostrarError('Completá usuario y contraseña.'); return; }
+  mostrarCargando('btn-login-prof', 'Ingresando...');
+  try {
+    const data = await apiCall('/auth/login', 'POST', { email: user, password: pass });
+    guardarSesion(data);
+    if (data.usuario.rol === 'guardia') navTo('pg-guardia');
+    else if (data.usuario.rol === 'operador_ambulancia') navTo('pg-ambulancia');
+    else if (data.usuario.rol === 'obstetra') navTo('pg-pac-home');
+    else mostrarError('Rol no reconocido para acceso profesional.');
+  } catch (err) {
+    mostrarError('Credenciales incorrectas. Si no tenés acceso, escribinos a profesionales@obstetricare.ar');
+  } finally {
+    ocultarCargando('btn-login-prof');
+  }
 }
 
 function loginDemo(rol) {
@@ -1007,7 +1157,23 @@ function nextEvalStep() {
   curStep++;
   if (curStep >= curFlow.length) {
     navTo('pg-pac-loading');
-    setTimeout(() => { calcRiesgo(); renderResultado(); navTo('pg-pac-resultado'); }, 2000);
+    setTimeout(async () => {
+      calcRiesgo();
+      // Enviar consulta al backend si hay sesión activa
+      if (sesion.token) {
+        try {
+          await apiCall('/consultas/iniciar', 'POST', {
+            sintoma_principal: sintSelected,
+            respuestas_triage: respuestas,
+            nivel_riesgo: window._riesgo
+          });
+        } catch (err) {
+          console.log('No se pudo registrar consulta:', err.message);
+        }
+      }
+      renderResultado();
+      navTo('pg-pac-resultado');
+    }, 2000);
   } else {
     renderEvalStep();
   }
@@ -1241,6 +1407,6 @@ function selAmbStatus(el, val) {
   el.querySelector('.dec-chk').style.background = 'var(--blue-400)';
   el.querySelector('.dec-chk').style.borderColor = 'var(--blue-400)';
 }
-</script> const API_URL = 'https://obstetricare-backend-production.up.railway.app/api';
+</script>
 </body>
 </html>
