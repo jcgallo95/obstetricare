@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ObstetriCare — Crear usuarios</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f0f4f8; min-height:100vh; padding:24px; }
+.wrap { max-width:480px; margin:0 auto; }
+h1 { font-size:22px; font-weight:700; color:#0F6E56; margin-bottom:4px; }
+.sub { font-size:14px; color:#888; margin-bottom:24px; }
+.card { background:white; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+.card h2 { font-size:15px; font-weight:600; color:#1a1a1a; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+.card p { font-size:13px; color:#666; margin-bottom:14px; line-height:1.5; }
+.btn { width:100%; padding:13px; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; color:white; transition:opacity 0.15s; }
+.btn:hover { opacity:0.9; }
+.btn:disabled { opacity:0.5; cursor:default; }
+.btn-teal { background:#0F6E56; }
+.btn-blue { background:#185FA5; }
+.btn-purple { background:#534AB7; }
+.btn-red { background:#A32D2D; }
+.result { margin-top:12px; padding:12px 14px; border-radius:9px; font-size:13px; line-height:1.6; display:none; }
+.result.ok { background:#EAF3DE; color:#3B6D11; display:block; }
+.result.error { background:#FCEBEB; color:#A32D2D; display:block; }
+.result.info { background:#E6F1FB; color:#185FA5; display:block; }
+.cred-box { background:#F1EFE8; border-radius:8px; padding:10px 12px; margin-top:10px; font-size:13px; color:#444; }
+.cred-box strong { display:block; margin-bottom:4px; color:#1a1a1a; }
+.sql-box { background:#1a1a2e; border-radius:8px; padding:12px; margin-top:10px; font-size:12px; color:#9FE1CB; font-family:monospace; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.4); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.step-num { width:24px; height:24px; border-radius:50%; background:#0F6E56; color:white; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.divider { height:1px; background:#E8E8E8; margin:6px 0 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>ObstetriCare</h1>
+  <div class="sub">Herramienta de configuración inicial — Crear usuarios de prueba</div>
+
+  <!-- PASO 1: OBSTETRA -->
+  <div class="card">
+    <h2><div class="step-num">1</div> Crear obstetra (tu usuario)</h2>
+    <div class="divider"></div>
+    <p>Crea tu cuenta como obstetra. Este es el usuario con el que vas a ingresar al panel profesional.</p>
+    <button class="btn btn-teal" onclick="crearObstetra(this)">Crear cuenta de obstetra</button>
+    <div class="result" id="res-obstetra"></div>
+  </div>
+
+  <!-- PASO 2: MÉDICO DE GUARDIA -->
+  <div class="card">
+    <h2><div class="step-num">2</div> Crear médico de guardia</h2>
+    <div class="divider"></div>
+    <p>El médico de guardia se crea directamente en la base de datos. Copiá el SQL y ejecutalo en Railway → Postgres → Database → Data.</p>
+    <button class="btn btn-blue" onclick="mostrarSQLGuardia(this)">Ver SQL para médico de guardia</button>
+    <div class="result" id="res-guardia"></div>
+  </div>
+
+  <!-- PASO 3: PACIENTE -->
+  <div class="card">
+    <h2><div class="step-num">3</div> Crear paciente de prueba</h2>
+    <div class="divider"></div>
+    <p>Primero tenés que completar el Paso 1 para obtener el ID del obstetra. Luego hacé clic acá.</p>
+    <button class="btn btn-purple" onclick="crearPaciente(this)" id="btn-paciente" disabled>Crear paciente de prueba</button>
+    <div class="result" id="res-paciente"></div>
+  </div>
+
+  <!-- PASO 4: PROBAR LOGIN -->
+  <div class="card">
+    <h2><div class="step-num">4</div> Probar login</h2>
+    <div class="divider"></div>
+    <p>Verificá que los usuarios se crearon correctamente.</p>
+    <button class="btn btn-teal" style="margin-bottom:8px;" onclick="testLogin('jcgallo@obstetricare.ar','Obstetra2025!','res-test-obs')">Probar login obstetra</button>
+    <button class="btn btn-blue" style="margin-bottom:8px;" onclick="testLogin('paciente@obstetricare.ar','Paciente2025!','res-test-pac')">Probar login paciente</button>
+    <div class="result" id="res-test-obs"></div>
+    <div class="result" id="res-test-pac"></div>
+  </div>
+
+</div>
+
+<script>
+const API = 'https://obstetricare-backend-production.up.railway.app/api';
+let obstetраId = null;
+
+function setResult(id, tipo, html) {
+  const el = document.getElementById(id);
+  el.className = 'result ' + tipo;
+  el.innerHTML = html;
+}
+
+function setLoading(btn, texto) {
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>${texto}`;
+}
+
+function resetBtn(btn, texto) {
+  btn.disabled = false;
+  btn.innerHTML = texto;
+}
+
+async function crearObstetra(btn) {
+  setLoading(btn, 'Creando cuenta...');
+  try {
+    const res = await fetch(`${API}/auth/registro-obstetra`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: 'Juan Carlos',
+        apellido: 'Gallo',
+        email: 'jcgallo@obstetricare.ar',
+        password: 'Obstetra2025!',
+        matricula: 'MP-12345',
+        consultorio: 'Rosario, Santa Fe'
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      obstetраId = data.obstetra_id;
+      document.getElementById('btn-paciente').disabled = false;
+      setResult('res-obstetra', 'ok', `
+        ✅ <strong>Obstetra creado correctamente</strong>
+        <div class="cred-box">
+          <strong>Tus credenciales:</strong>
+          📧 Email: jcgallo@obstetricare.ar<br>
+          🔑 Contraseña: Obstetra2025!<br>
+          🆔 Obstetra ID: ${data.obstetra_id}
+        </div>
+      `);
+      resetBtn(btn, '✅ Obstetra creado');
+      btn.style.background = '#3B6D11';
+    } else if (data.error && data.error.includes('ya está registrado')) {
+      // Ya existe — intentar login para obtener el ID
+      const loginRes = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'jcgallo@obstetricare.ar', password: 'Obstetra2025!' })
+      });
+      const loginData = await loginRes.json();
+      if (loginRes.ok) {
+        const perfilRes = await fetch(`${API}/perfil`, {
+          headers: { 'Authorization': `Bearer ${loginData.token}` }
+        });
+        const perfilData = await perfilRes.json();
+        obstetраId = perfilData.obstetra?.id;
+        document.getElementById('btn-paciente').disabled = false;
+        setResult('res-obstetra', 'info', `
+          ℹ️ <strong>El obstetra ya existía</strong> — sesión iniciada correctamente.
+          <div class="cred-box">
+            📧 Email: jcgallo@obstetricare.ar<br>
+            🔑 Contraseña: Obstetra2025!<br>
+            🆔 ID: ${obstetраId || 'ver en Railway'}
+          </div>
+        `);
+        resetBtn(btn, '✅ Ya existe');
+      }
+    } else {
+      setResult('res-obstetra', 'error', `❌ Error: ${data.error}`);
+      resetBtn(btn, 'Reintentar');
+    }
+  } catch (err) {
+    setResult('res-obstetra', 'error', `❌ No se pudo conectar con el backend: ${err.message}`);
+    resetBtn(btn, 'Reintentar');
+  }
+}
+
+function mostrarSQLGuardia(btn) {
+  const sql = `INSERT INTO usuarios (email, password_hash, rol, nombre, apellido)
+VALUES (
+  'guardia@obstetricare.ar',
+  crypt('Guardia2025!', gen_salt('bf')),
+  'guardia',
+  'García',
+  'Médico'
+);
+
+INSERT INTO medicos_guardia (usuario_id, matricula, disponible)
+SELECT id, 'MP-99999', TRUE
+FROM usuarios WHERE email = 'guardia@obstetricare.ar';`;
+
+  setResult('res-guardia', 'info', `
+    ℹ️ <strong>Copiá este SQL y ejecutalo en Railway</strong><br>
+    Railway → Postgres → Database → Data → pegá y Ctrl+Enter
+    <div class="sql-box">${sql}</div>
+    <div class="cred-box" style="margin-top:10px;">
+      <strong>Credenciales del médico de guardia:</strong>
+      📧 Email: guardia@obstetricare.ar<br>
+      🔑 Contraseña: Guardia2025!
+    </div>
+  `);
+  resetBtn(btn, '✅ SQL mostrado');
+}
+
+async function crearPaciente(btn) {
+  if (!obstetраId) {
+    setResult('res-paciente', 'error', '❌ Primero completá el Paso 1 para obtener el ID del obstetra.');
+    return;
+  }
+  setLoading(btn, 'Creando paciente...');
+  try {
+    const res = await fetch(`${API}/auth/registro-paciente`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: 'María Laura',
+        apellido: 'Fernández',
+        email: 'paciente@obstetricare.ar',
+        password: 'Paciente2025!',
+        codigo_obstetra: obstetраId,
+        semanas_gestacion: 34,
+        tipo_embarazo: 'único',
+        antecedentes: ['hta', 'preeclampsia']
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setResult('res-paciente', 'ok', `
+        ✅ <strong>Paciente creada correctamente</strong>
+        <div class="cred-box">
+          <strong>Credenciales de la paciente:</strong>
+          📧 Email: paciente@obstetricare.ar<br>
+          🔑 Contraseña: Paciente2025!<br>
+          👨‍⚕️ Obstetra asignado: Juan Carlos Gallo
+        </div>
+      `);
+      resetBtn(btn, '✅ Paciente creada');
+      btn.style.background = '#3B6D11';
+    } else if (data.error && data.error.includes('ya está registrado')) {
+      setResult('res-paciente', 'info', `ℹ️ La paciente ya existía. Podés usar: paciente@obstetricare.ar / Paciente2025!`);
+      resetBtn(btn, '✅ Ya existe');
+    } else {
+      setResult('res-paciente', 'error', `❌ Error: ${data.error}`);
+      resetBtn(btn, 'Reintentar');
+    }
+  } catch (err) {
+    setResult('res-paciente', 'error', `❌ Error: ${err.message}`);
+    resetBtn(btn, 'Reintentar');
+  }
+}
+
+async function testLogin(email, pass, resultId) {
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setResult(resultId, 'ok', `✅ Login exitoso — Rol: ${data.usuario.rol} — ${data.usuario.nombre} ${data.usuario.apellido}`);
+    } else {
+      setResult(resultId, 'error', `❌ ${data.error}`);
+    }
+  } catch (err) {
+    setResult(resultId, 'error', `❌ Error de conexión: ${err.message}`);
+  }
+}
+</script>
+</body>
+</html>
